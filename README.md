@@ -6,7 +6,13 @@
 
 2. Install [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 
-3. Run following command
+3. Install dependencies
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Run following command
 
    ```bash
    export OPENAI_API_KEY=<your-openai-api-key>
