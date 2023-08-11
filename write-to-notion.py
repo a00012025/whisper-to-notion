@@ -20,6 +20,7 @@ end_characters = [
     "。"
 ]
 
+translate = False
 notion = Client(auth=os.environ["NOTION_TOKEN"])
 page_id = "04646995367c426fb7942d9d37800392"
 
@@ -40,7 +41,7 @@ while True:
             continue
 
         combine = False
-        if len(last_line) > 0 and last_line[-1] not in end_characters and last_translated_line[-1] not in end_characters:
+        if translate and (len(last_line) > 0 and last_line[-1] not in end_characters and last_translated_line[-1] not in end_characters):
             # combine this line with last line
             combine = True
             if last_line.endswith("--"):
@@ -48,9 +49,13 @@ while True:
             line = last_line + " " + line
 
         # translate to Chinese
-        response = openai.ChatCompletion.create(model="gpt-4", messages=[{"role": "user", "content": translation_prompt % line}])
-        translated_content = response.choices[0].message.content # type: ignore
-        # translated_content = " "
+        if translate:
+            response = openai.ChatCompletion.create(
+                model="gpt-4", messages=[{"role": "user", "content": translation_prompt % line}])
+            # type: ignore
+            translated_content = response.choices[0].message.content
+        else:
+            translated_content = " "
 
         # if not combined, append to the end of the Notion page
         if not combine:
@@ -59,11 +64,11 @@ while True:
                     "object": "block",
                     "type": "paragraph",
                     "paragraph": {
-                        "rich_text": [{"type": "text", "text": {"content": line+"\n"+translated_content}}],
+                        "rich_text": [{"type": "text", "text": {"content": line+"\n"+translated_content if translate else line}}],
                     },
                 }
             ])
-            last_block_id = result["results"][0]["id"] # type: ignore
+            last_block_id = result["results"][0]["id"]  # type: ignore
         else:
             # if combined, replace the last block with the combined one
             result = notion.blocks.update(last_block_id, paragraph={
